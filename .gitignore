@@ -1,0 +1,10 @@
+# Simulation files
+sim/*.vvp
+sim/*.vcd
+
+# Synthesis logs
+reports/*.log
+
+# Temporary files
+*.swp
+*~
