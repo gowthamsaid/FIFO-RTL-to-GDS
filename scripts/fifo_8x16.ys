@@ -1,0 +1,20 @@
+# Load the RTL source
+read_verilog rtl/fifo_sync.v
+
+# Configure the FIFO parameters
+chparam -set DATA_WIDTH 8 -set DEPTH 16 fifo_sync
+
+# Select and verify the top module
+hierarchy -check -top fifo_sync
+
+# Perform generic synthesis
+synth -top fifo_sync
+
+# Check the synthesized design
+check -assert
+
+# Display hardware statistics
+stat
+
+# Export the generic synthesized netlist
+write_verilog -noattr reports/fifo_8x16_script.v

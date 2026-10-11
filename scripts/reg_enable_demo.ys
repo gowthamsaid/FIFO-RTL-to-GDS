@@ -1,0 +1,16 @@
+read_verilog rtl/reg_enable_demo.v
+hierarchy -check -top reg_enable_demo
+
+# Convert procedural logic into flip-flops and multiplexers
+proc
+show -format svg -viewer none -prefix reports/reg_enable_before
+stat
+
+# Optimize, including possible clock-enable extraction
+opt
+show -format svg -viewer none -prefix reports/reg_enable_after
+stat
+
+# Complete generic synthesis
+synth -top reg_enable_demo
+stat
