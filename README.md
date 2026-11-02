@@ -30,6 +30,19 @@ This project demonstrates the complete *educational* digital physical-design wor
 
 ## Physical implementation
 
+### Final routed layouts
+
+These images are generated directly from the **actual GDSII files** using the committed [preview renderer](scripts/render_gds_previews.py), not AI-generated chip art. They show the top-level metal routing geometry; standard-cell interiors are not flattened, and this simplified rendering is **not an exact KLayout screenshot**.
+
+| 8-bit × 16-entry FIFO | 32-bit × 32-entry FIFO |
+|:---:|:---:|
+| [![8×16 FIFO routed metal preview](docs/images/fifo_8x16_routed.png)](docs/images/fifo_8x16_routed.png) | [![32×32 FIFO routed metal preview](docs/images/fifo_32x32_routed.png)](docs/images/fifo_32x32_routed.png) |
+| 128-bit storage | 1,024-bit storage |
+
+The corresponding editable physical design data can be inspected with KLayout: [8×16 GDSII](layout/fifo_8x16/fifo_8x16.gds) and [32×32 GDSII](layout/fifo_32x32/fifo_32x32.gds).
+
+### Flow overview
+
 [![RTL-to-GDSII stage diagram](docs/flow_overview.svg)](docs/flow_overview.svg)
 
 The repository contains the **actual final GDSII outputs** for [8×16](layout/fifo_8x16/fifo_8x16.gds) and [32×32](layout/fifo_32x32/fifo_32x32.gds). Open them in KLayout to inspect the final physical layout. GDSII files cannot be previewed as ordinary images directly on GitHub.
