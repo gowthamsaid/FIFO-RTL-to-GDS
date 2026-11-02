@@ -1,0 +1,32 @@
+name: Export authentic KLayout images
+
+on:
+  push:
+    paths:
+      - "scripts/export_klayout_images.rb"
+      - ".github/workflows/export-klayout-images.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install KLayout and headless display
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y klayout xvfb
+      - name: Export 8x16 and 32x32 layouts in KLayout
+        run: xvfb-run -a klayout -z -r scripts/export_klayout_images.rb
+      - name: Commit exported screenshots
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/images/fifo_8x16_klayout.png docs/images/fifo_32x32_klayout.png
+          if ! git diff --cached --quiet; then
+            git commit -m "Add authentic KLayout full-layer screenshots"
+            git push
+          fi
