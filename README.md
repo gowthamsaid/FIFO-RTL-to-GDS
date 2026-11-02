@@ -30,16 +30,16 @@ This project demonstrates the complete *educational* digital physical-design wor
 
 ## Physical implementation
 
-### Final routed layouts
+### Final routed layouts — KLayout
 
-These images are generated directly from the **actual GDSII files** using the committed [preview renderer](scripts/render_gds_previews.py), not AI-generated chip art. They show the top-level metal routing geometry; standard-cell interiors are not flattened, and this simplified rendering is **not an exact KLayout screenshot**.
+The following are **KLayout-exported images from the original routed GDSII databases**, showing both designs at their final physical implementation stage. The layer colors are visualization settings; these images are illustrative evidence of geometry, not signoff proof.
 
 | 8-bit × 16-entry FIFO | 32-bit × 32-entry FIFO |
 |:---:|:---:|
-| [![8×16 FIFO routed metal preview](docs/images/fifo_8x16_routed.png)](docs/images/fifo_8x16_routed.png) | [![32×32 FIFO routed metal preview](docs/images/fifo_32x32_routed.png)](docs/images/fifo_32x32_routed.png) |
-| 128-bit storage | 1,024-bit storage |
+| [![Final 8×16 FIFO physical layout in KLayout](docs/images/fifo_8x16_klayout.png)](docs/images/fifo_8x16_klayout.png) | [![Final 32×32 FIFO physical layout in KLayout](docs/images/fifo_32x32_klayout.png)](docs/images/fifo_32x32_klayout.png) |
+| 128 storage bits · 658 standard cells | 1,024 storage bits · 3,988 standard cells |
 
-The corresponding editable physical design data can be inspected with KLayout: [8×16 GDSII](layout/fifo_8x16/fifo_8x16.gds) and [32×32 GDSII](layout/fifo_32x32/fifo_32x32.gds).
+The original GDSII files are available for independent inspection: [8×16](layout/fifo_8x16/fifo_8x16.gds) · [32×32](layout/fifo_32x32/fifo_32x32.gds). Screenshots are generated with [KLayout export script](scripts/export_klayout_images.rb).
 
 ### Flow overview
 
@@ -86,7 +86,7 @@ openroad/fifo_32x32/   # Larger configuration settings and SDC
 reports/               # Original finish-stage JSON, STA reports, synthesis, netlists
 layout/fifo_8x16/      # Final 8x16 GDSII
 layout/fifo_32x32/     # Final 32x32 GDSII
-docs/                  # Flow overview, technical notes, reproduction details
+docs/                  # Real KLayout screenshots, flow diagram, technical notes
 .github/workflows/     # RTL regression workflow
 ```
 
