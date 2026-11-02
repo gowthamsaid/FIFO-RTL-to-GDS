@@ -15,8 +15,8 @@ This project demonstrates the complete *educational* digital physical-design wor
 | Mapped standard cells¹ | 658 | 3,988 |
 | Standard-cell area¹ | 1,355.8 µm² | 9,216.1 µm² |
 | Core utilization¹ | 42.05% | 40.68% |
-| Worst reported **setup-path slack**² | +1.29 ns | +1.21 ns |
-| Examined minimum/hold-path slack² | +0.09 ns | +0.09 ns |
+| Worst reported **setup-path slack**² | +1.2864 ns | +1.2059 ns |
+| Worst reported **hold-path slack**² | +0.0920 ns | +0.0910 ns |
 | Setup / hold violation count² | 0 / 0 | 0 / 0 |
 | Setup TNS² | 0.00 ns | 0.00 ns |
 | Estimated minimum period² | 0.71 ns | 0.79 ns |
@@ -24,15 +24,17 @@ This project demonstrates the complete *educational* digital physical-design wor
 
 **Takeaway:** An 8× increase in storage capacity was accompanied by approximately **6.8× cell area** and **6.1× cell count**. Both designs met the recorded 2 ns timing constraint at the reported analysis corner. Because both word width and depth increased, this comparison does not isolate either parameter's individual impact.
 
-¹ Cell counts, area, and utilization are preserved from the project's archived OpenROAD finish-stage metrics/portfolio; the original machine-readable JSON summaries are **not** currently checked into this repository. See [provenance notes](docs/engineering_notes.md#measurement-provenance).
+¹ Cell counts, area, and utilization are verified against the recovered, **original finish-stage JSON reports**: [8×16](reports/fifo_8x16/6_report.json) and [32×32](reports/fifo_32x32/6_report.json). The files were recovered byte-for-byte from the October 11, 2026 OpenROAD runs. The correct fields are `finish__design__instance__count__stdcell`, `finish__design__instance__area__stdcell`, and `finish__design__instance__utilization__stdcell`. See [measurement provenance](docs/engineering_notes.md#measurement-provenance).
 
-² Read directly from the committed [8×16 timing report](reports/fifo_8x16/final_timing.rpt) and [32×32 timing report](reports/fifo_32x32/final_timing.rpt). These reports print `wns max 0.00` when there are no negative-slack paths; the **positive values in the table are worst-path slacks**, not a claimed positive WNS value. The reported Fmax is an STA estimate, not measured silicon speed.
+² Full-precision worst-path slacks and the zero-violation counts come from those same [8×16 JSON](reports/fifo_8x16/6_report.json) and [32×32 JSON](reports/fifo_32x32/6_report.json) reports; compare with the original [8×16 STA report](reports/fifo_8x16/final_timing.rpt) and [32×32 STA report](reports/fifo_32x32/final_timing.rpt). The STA text reports print `wns max 0.00` when no negative-slack paths exist; **positive worst-path slack is not positive WNS**. Fmax is an STA estimate, not measured silicon speed.
 
 ## Physical implementation
 
 [![RTL-to-GDSII stage diagram](docs/flow_overview.svg)](docs/flow_overview.svg)
 
 The repository contains the **actual final GDSII outputs** for [8×16](layout/fifo_8x16/fifo_8x16.gds) and [32×32](layout/fifo_32x32/fifo_32x32.gds). Open them in KLayout to inspect the final physical layout. GDSII files cannot be previewed as ordinary images directly on GitHub.
+
+Use `python3 scripts/summarize_finish_metrics.py` to extract and check the two finish-stage reports. See the [evidence index](reports/README.md) for metric sources and caveats. The original final DEF and OpenDB files were recovered as well, but are kept out of the repository to avoid duplicating bulky generated artifacts; the GDSII files are already checked in.
 
 The physical flow targeted the [Nangate45](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts) open platform with a 2.0 ns core clock and 0.2 ns simplified input/output delays. Details and limitations are in the [implementation notes](docs/engineering_notes.md).
 
@@ -68,7 +70,7 @@ tb/                    # Three FIFO self-checking testbenches
 scripts/               # Yosys scripts + RTL test runner
 openroad/fifo_8x16/    # Nangate45 implementation settings and SDC
 openroad/fifo_32x32/   # Larger configuration settings and SDC
-reports/               # Generic synthesis summary, post-route STA, netlists
+reports/               # Original finish-stage JSON, STA reports, synthesis, netlists
 layout/fifo_8x16/      # Final 8x16 GDSII
 layout/fifo_32x32/     # Final 32x32 GDSII
 docs/                  # Flow overview, technical notes, reproduction details

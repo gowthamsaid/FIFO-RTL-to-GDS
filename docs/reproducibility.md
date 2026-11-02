@@ -39,7 +39,17 @@ To reproduce a physical implementation:
 
 **Why no single `make` command here?** The exact original ORFS revision, dependency versions and environment paths were not preserved in the repository. Giving a guessed one-liner would be misleading. The checked-in OpenROAD configs are project-specific settings, not a validated portable build kit.
 
-## 4. Review final results
+## 4. Recheck recovered finish-stage metrics
+
+The original October 11, 2026 `6_report.json` outputs for **both** FIFO sizes are checked in under `reports/fifo_*/6_report.json`. Parse and verify the finish metrics with standard Python:
+
+```bash
+python3 scripts/summarize_finish_metrics.py
+```
+
+The parser reads the explicit `__stdcell` metrics and checks the recorded setup/hold violation counts and total negative slacks. This is an **evidence validation**, not a rerun of OpenROAD. It also avoids ambiguous repeated generic keys in the tool-generated JSON.
+
+## 5. Review final results
 
 - [8×16 final STA report](../reports/fifo_8x16/final_timing.rpt)
 - [32×32 final STA report](../reports/fifo_32x32/final_timing.rpt)

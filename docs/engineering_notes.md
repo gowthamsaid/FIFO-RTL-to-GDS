@@ -43,23 +43,35 @@ The `config.mk` files retain an original machine-specific RTL path under `$(HOME
 
 ## Measurement provenance
 
-| Measurement | 8×16 | 32×32 | Evidence |
+The **original** OpenROAD finish-stage [8×16 `6_report.json`](../reports/fifo_8x16/6_report.json) and [32×32 `6_report.json`](../reports/fifo_32x32/6_report.json) were recovered from the October 11, 2026 WSL run directories and compared with the uploaded archive. Both files have been restored **byte-for-byte**. The GDSII and STA report Git blob checksums also matched the original repository versions, so previously committed physical results have not been modified.
+
+| Measurement | 8×16 | 32×32 | Source |
 |---|---:|---:|---|
-| Generic Yosys cells | 355 | 2,206 | [generic synthesis summary](../reports/generic_synthesis_summary.md) |
-| Generic flip-flops | 149 | 1,072 | [generic synthesis summary](../reports/generic_synthesis_summary.md) |
-| Mapped cell count | 658 | 3,988 | Archived October 2026 project portfolio / finish-stage JSON transcription |
-| Standard-cell area (µm²) | 1,355.8 | 9,216.1 | Archived project portfolio / finish-stage JSON transcription |
-| Final core utilization | 42.05% | 40.68% | Archived project portfolio / finish-stage JSON transcription |
-| Worst setup-path slack (ns) | +1.29 | +1.21 | Committed `final_timing.rpt` |
-| Examined hold-path slack (ns) | +0.09 | +0.09 | Committed `final_timing.rpt` |
-| Setup violation count | 0 | 0 | Committed `final_timing.rpt` |
-| Hold violation count | 0 | 0 | Committed `final_timing.rpt` |
-| Setup TNS (ns) | 0.00 | 0.00 | Committed `final_timing.rpt` |
-| Reported Fmax (MHz) | 1,401.40 | 1,259.22 | Committed `final_timing.rpt` |
+| Storage bits | 128 | 1,024 | RTL parameters |
+| Generic Yosys cells | 355 | 2,206 | [synthesis summary](../reports/generic_synthesis_summary.md) |
+| Generic flip-flops | 149 | 1,072 | [synthesis summary](../reports/generic_synthesis_summary.md) |
+| **Mapped standard cells** | **658** | **3,988** | JSON: `finish__design__instance__count__stdcell` |
+| Standard-cell area (µm²) | 1,355.8 | 9,216.1 | JSON: `finish__design__instance__area__stdcell` |
+| Final std-cell utilization | 42.0545% | 40.6789% | JSON: `finish__design__instance__utilization__stdcell` |
+| Total placed instances (incl. fillers) | 1,452 | 9,500 | JSON: `finish__design__instance__count` |
+| Filler-cell instances | 794 | 5,512 | JSON: `finish__design__instance__count__class:fill_cell` |
+| Clock-buffer instances | 20 | 239 | JSON: `finish__design__instance__count__class:clock_buffer` |
+| Worst setup-path slack (ns) | +1.28643 | +1.20585 | JSON: `finish__timing__setup__ws` |
+| Worst hold-path slack (ns) | +0.0920368 | +0.0909872 | JSON: `finish__timing__hold__ws` |
+| Setup / hold violation count | 0 / 0 | 0 / 0 | JSON: `finish__timing__drv__*violation_count` |
+| Setup / hold TNS (ns) | 0 / 0 | 0 / 0 | JSON: `finish__timing__*__tns` |
+| STA-estimated Fmax (MHz) | 1,401.40 | 1,259.22 | JSON: `finish__timing__fmax` |
+| Worst VDD drop (mV), default corner | 4.726 | 4.692 | JSON power-grid default-corner fields; **not signoff** |
 
-Original machine-readable OpenROAD finish-stage `6_report.json` files were used when preparing the archived portfolio, but **are not present in the current GitHub repository**. The more precise `+1.2864` and `+1.2059` path-slack numbers in that archive have been rounded here to match the committed timing-report precision. The `wns max 0.00` line in the STA report is not a contradiction: OpenSTA reports 0 negative slack when every analyzed path meets timing and separately reports the positive `worst slack max`.
+**Why do cell counts differ?** The larger total instance count includes filler instances, while `__stdcell` reports the metric convention used for the cell-area comparison. Clock buffers are included in the class accounting; do not add all class counters as though disjoint.
 
-The 32×32 minimum period and Fmax estimate are 0.79 ns and 1,259.22 MHz as printed by OpenSTA. These are estimates under the tested assumptions, **not silicon measurements**. To improve provenance, check in the untouched original finish-stage JSON summaries and tool logs if available in the original working directory.
+**Original JSON caveat:** The untouched OpenROAD finish JSON contains repeated generic keys such as `finish__design__instance__area` with different values. This is a tool-output formatting issue: use the explicit unique `__stdcell`, `__core__area`, and `__die__area` metric keys instead of ambiguous generic keys.
+
+**Timing convention:** The text STA reports print `wns max 0.00` when all paths meet setup timing, but also print a positive `worst slack max`. The table reports the latter. A 2.00 ns clock constraint was used; `period_min`/Fmax are **estimated by STA**, not validated silicon operating points.
+
+The JSON also contains tool-reported power estimates and power-grid voltage-drop outputs. Switching activity assumptions and model accuracy were not independently documented; these are **preliminary single-corner tool outputs**, not proven measured power, EM/IR signoff, or full physical signoff.
+
+Use `python3 scripts/summarize_finish_metrics.py` from the repository root to summarize key values and check zero recorded timing violations. See [the report index](../reports/README.md) for source navigation.
 
 ### Interpretation
 
@@ -70,6 +82,6 @@ Increasing storage from 128 to 1,024 bits (8×) increased mapped area by ~6.8× 
 - Nangate45 open standard-cell platform; not a modern production-node tapeout.
 - Setup and hold results apply to the recorded single analysis corner and simplified input/output timing constraints.
 - No multi-mode/multi-corner signoff; no independent full DRC/LVS, antenna, or EM/IR signoff evidence is checked in.
-- No SRAM macro insertion, power analysis, manufacturing or silicon validation.
+- No SRAM macro insertion, independently validated power/activity analysis, manufacturing or silicon validation. The finish JSON contains preliminary tool power/voltage-drop estimates, not signoff.
 - The repository contains the resulting GDSII files, but not a fully portable, pinned end-to-end OpenROAD build environment.
 - Timing and area numbers describe these two specific physical runs; they are not universal FIFO scaling laws.

@@ -38,4 +38,4 @@ These results represent generic logic synthesis.
 They do not represent technology-mapped standard-cell area,
 physical routing, clock tree synthesis, or timing closure.
 
-Physical implementation results will be added after OpenROAD.
+Physical implementation was completed for both configurations. See [comparison metrics](comparison_summary.csv), the original [8×16 finish JSON](fifo_8x16/6_report.json), [32×32 finish JSON](fifo_32x32/6_report.json), and the [project README](../README.md).

@@ -1,12 +1,15 @@
 metric,unit,fifo_8x16,fifo_32x32,provenance
 storage_bits,bits,128,1024,RTL parameter values
 clock_period,ns,2.0,2.0,checked-in SDC
-mapped_cells,count,658,3988,archived finish-stage metric not currently checked in
-standard_cell_area,um2,1355.8,9216.1,archived finish-stage metric not currently checked in
-core_utilization,percent,42.05,40.68,archived finish-stage metric not currently checked in
-worst_setup_path_slack,ns,1.29,1.21,checked-in final_timing.rpt
-examined_min_path_slack,ns,0.09,0.09,checked-in final_timing.rpt
-setup_tns,ns,0.00,0.00,checked-in final_timing.rpt
-setup_violations,count,0,0,checked-in final_timing.rpt
-hold_violations,count,0,0,checked-in final_timing.rpt
-estimated_fmax,MHz,1401.40,1259.22,checked-in final_timing.rpt
+mapped_standard_cells,count,658,3988,recovered original 6_report.json __stdcell
+standard_cell_area,um2,1355.8,9216.1,recovered original 6_report.json __stdcell
+core_utilization,percent,42.0545,40.6789,recovered original 6_report.json __stdcell
+total_instances_including_fillers,count,1452,9500,recovered original 6_report.json
+clock_buffer_instances,count,20,239,recovered original 6_report.json
+worst_setup_path_slack,ns,1.28643,1.20585,recovered original 6_report.json
+worst_hold_path_slack,ns,0.0920368,0.0909872,recovered original 6_report.json
+setup_tns,ns,0,0,recovered original 6_report.json
+hold_tns,ns,0,0,recovered original 6_report.json
+setup_violations,count,0,0,recovered original 6_report.json
+hold_violations,count,0,0,recovered original 6_report.json
+estimated_fmax,MHz,1401.40,1259.22,recovered original 6_report.json

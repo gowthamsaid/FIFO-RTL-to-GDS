@@ -7,12 +7,16 @@ on:
       - "tb/**"
       - "scripts/run_rtl_tests.sh"
       - ".github/workflows/rtl-regression.yml"
+      - "reports/**/6_report.json"
+      - "scripts/summarize_finish_metrics.py"
   pull_request:
     paths:
       - "rtl/**"
       - "tb/**"
       - "scripts/run_rtl_tests.sh"
       - ".github/workflows/rtl-regression.yml"
+      - "reports/**/6_report.json"
+      - "scripts/summarize_finish_metrics.py"
   workflow_dispatch:
 
 jobs:
@@ -25,3 +29,5 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y iverilog
       - name: Run FIFO directed tests
         run: bash scripts/run_rtl_tests.sh
+      - name: Validate archived finish-stage metrics
+        run: python3 scripts/summarize_finish_metrics.py
