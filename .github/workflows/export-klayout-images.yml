@@ -28,5 +28,7 @@ jobs:
           git add docs/images/fifo_8x16_klayout.png docs/images/fifo_32x32_klayout.png
           if ! git diff --cached --quiet; then
             git commit -m "Add authentic KLayout full-layer screenshots"
-            git push
+            git fetch origin "$GITHUB_REF_NAME"
+            git rebase "origin/$GITHUB_REF_NAME"
+            git push origin "HEAD:$GITHUB_REF_NAME"
           fi
