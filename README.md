@@ -32,14 +32,14 @@ This project demonstrates the complete *educational* digital physical-design wor
 
 ### Final routed layouts — KLayout
 
-The following are **KLayout-exported images from the original routed GDSII databases**, showing both designs at their final physical implementation stage. The layer colors are visualization settings; these images are illustrative evidence of geometry, not signoff proof.
+The two images below are **screenshots captured in KLayout from the original final routed GDSII files**. They show the full design view using visible layout layers; displayed colors and hatching depend on the viewer settings. These are implementation visuals, not DRC/LVS or other signoff evidence.
 
 | 8-bit × 16-entry FIFO | 32-bit × 32-entry FIFO |
 |:---:|:---:|
 | [![Final 8×16 FIFO physical layout in KLayout](docs/images/fifo_8x16_klayout.png)](docs/images/fifo_8x16_klayout.png) | [![Final 32×32 FIFO physical layout in KLayout](docs/images/fifo_32x32_klayout.png)](docs/images/fifo_32x32_klayout.png) |
 | 128 storage bits · 658 standard cells | 1,024 storage bits · 3,988 standard cells |
 
-The original GDSII files are available for independent inspection: [8×16](layout/fifo_8x16/fifo_8x16.gds) · [32×32](layout/fifo_32x32/fifo_32x32.gds). Screenshots are generated with [KLayout export script](scripts/export_klayout_images.rb).
+The original GDSII files are available for independent inspection: [8×16](layout/fifo_8x16/fifo_8x16.gds) · [32×32](layout/fifo_32x32/fifo_32x32.gds). The PNG screenshots can be updated without changing this README by replacing the corresponding files in `docs/images/`.
 
 ### Flow overview
 
