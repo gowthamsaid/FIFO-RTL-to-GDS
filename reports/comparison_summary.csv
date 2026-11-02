@@ -1,0 +1,12 @@
+metric,unit,fifo_8x16,fifo_32x32,provenance
+storage_bits,bits,128,1024,RTL parameter values
+clock_period,ns,2.0,2.0,checked-in SDC
+mapped_cells,count,658,3988,archived finish-stage metric not currently checked in
+standard_cell_area,um2,1355.8,9216.1,archived finish-stage metric not currently checked in
+core_utilization,percent,42.05,40.68,archived finish-stage metric not currently checked in
+worst_setup_path_slack,ns,1.29,1.21,checked-in final_timing.rpt
+examined_min_path_slack,ns,0.09,0.09,checked-in final_timing.rpt
+setup_tns,ns,0.00,0.00,checked-in final_timing.rpt
+setup_violations,count,0,0,checked-in final_timing.rpt
+hold_violations,count,0,0,checked-in final_timing.rpt
+estimated_fmax,MHz,1401.40,1259.22,checked-in final_timing.rpt

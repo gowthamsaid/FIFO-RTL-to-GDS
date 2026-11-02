@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 205" role="img" aria-labelledby="title desc">
+<title id="title">RTL-to-GDSII FIFO physical-design workflow</title>
+<desc id="desc">RTL and tests feed synthesis, floorplan and placement, clock-tree synthesis, routing, then GDSII and post-route timing reports.</desc>
+<rect width="1080" height="205" rx="15" fill="#0b1220"/>
+<text x="32" y="39" fill="#e6edf7" font-family="Arial,sans-serif" font-size="21" font-weight="700">RTL → GDSII  |  Synchronous FIFO</text>
+<text x="32" y="65" fill="#a9b8d0" font-family="Arial,sans-serif" font-size="13">Nangate45 standard-cell implementation • OpenROAD backend</text>
+<g font-family="Arial,sans-serif" font-size="14" font-weight="600" text-anchor="middle">
+<rect x="24" y="99" width="146" height="65" rx="9" fill="#254269" stroke="#5496db"/><text x="97" y="124" fill="#fff">Verilog RTL</text><text x="97" y="145" fill="#c8e3ff">+ RTL tests</text>
+<rect x="200" y="99" width="146" height="65" rx="9" fill="#254269" stroke="#5496db"/><text x="273" y="123" fill="#fff">Yosys</text><text x="273" y="145" fill="#c8e3ff">synthesis</text>
+<rect x="376" y="99" width="146" height="65" rx="9" fill="#254269" stroke="#5496db"/><text x="449" y="123" fill="#fff">Floorplan</text><text x="449" y="145" fill="#c8e3ff">+ placement</text>
+<rect x="552" y="99" width="146" height="65" rx="9" fill="#254269" stroke="#5496db"/><text x="625" y="123" fill="#fff">Clock tree</text><text x="625" y="145" fill="#c8e3ff">synthesis</text>
+<rect x="728" y="99" width="146" height="65" rx="9" fill="#254269" stroke="#5496db"/><text x="801" y="123" fill="#fff">Global + detail</text><text x="801" y="145" fill="#c8e3ff">routing</text>
+<rect x="904" y="99" width="152" height="65" rx="9" fill="#1a5b56" stroke="#4dd5bb"/><text x="980" y="123" fill="#fff">GDSII</text><text x="980" y="145" fill="#d6fff5">+ post-route STA</text>
+</g>
+<g fill="none" stroke="#8fb4d8" stroke-width="3"><path d="M170 132h30m-11-7 11 7-11 7M346 132h30m-11-7 11 7-11 7M522 132h30m-11-7 11 7-11 7M698 132h30m-11-7 11 7-11 7M874 132h30m-11-7 11 7-11 7"/></g>
+</svg>

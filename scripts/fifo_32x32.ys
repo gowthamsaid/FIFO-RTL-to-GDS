@@ -1,0 +1,8 @@
+# Generic synthesis of 32-bit x 32-entry synchronous FIFO
+read_verilog rtl/fifo_sync.v
+chparam -set DATA_WIDTH 32 -set DEPTH 32 fifo_sync
+hierarchy -check -top fifo_sync
+synth -top fifo_sync
+check -assert
+stat
+write_verilog -noattr reports/fifo_32x32_script.v

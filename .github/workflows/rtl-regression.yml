@@ -1,0 +1,27 @@
+name: RTL regression
+
+on:
+  push:
+    paths:
+      - "rtl/**"
+      - "tb/**"
+      - "scripts/run_rtl_tests.sh"
+      - ".github/workflows/rtl-regression.yml"
+  pull_request:
+    paths:
+      - "rtl/**"
+      - "tb/**"
+      - "scripts/run_rtl_tests.sh"
+      - ".github/workflows/rtl-regression.yml"
+  workflow_dispatch:
+
+jobs:
+  icarus-verilog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install Icarus Verilog
+        run: sudo apt-get update && sudo apt-get install -y iverilog
+      - name: Run FIFO directed tests
+        run: bash scripts/run_rtl_tests.sh
