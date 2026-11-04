@@ -1,0 +1,106 @@
+name: Research expansion — paired FIFO physical design (exploratory)
+
+on:
+  push:
+    branches: [research/readpath-pilot-nov2026]
+    paths:
+      - ".github/workflows/readpath-expansion.yml"
+      - "research/readpath/scripts/aggregate_expansion.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Explicit research decision (2026-11-04): permit size-scaling experiments
+# despite one failed 8x16 cloud-vs-WSL routing-length reproducibility tolerance.
+# This DOES NOT mark the earlier validation as passed.
+concurrency:
+  group: readpath-expansion-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  ORFS_REV: d056a2b304182bf76ff10653531165b1dd9848d4
+  ORFS_IMAGE: openroad/orfs@sha256:641c6870a2c64143464d46017dd25ab647900fd29dce502230a2db0682e69bc9
+  ORFS_ROOT: /tmp/openroad-research-orfs
+
+jobs:
+  paired:
+    name: FIFO ${{ matrix.width }}x${{ matrix.depth }} / ${{ matrix.geometry }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - {width: 32, depth: 32, geometry: natural}
+          - {width: 8, depth: 64, geometry: natural}
+          - {width: 16, depth: 32, geometry: natural}
+          - {width: 32, depth: 16, geometry: natural}
+          - {width: 64, depth: 8, geometry: natural}
+          - {width: 8, depth: 16, geometry: matched}
+          - {width: 32, depth: 32, geometry: matched}
+    steps:
+      - name: Check out research branch
+        uses: actions/checkout@v4
+
+      - name: Prepare pinned ORFS revision and Docker image
+        run: |
+          git clone --filter=blob:none https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git "$ORFS_ROOT"
+          git -C "$ORFS_ROOT" checkout "$ORFS_REV"
+          git -C "$ORFS_ROOT" submodule update --init --recursive --depth 1
+          docker pull "$ORFS_IMAGE"
+          echo "Pinned ORFS revision: $(git -C "$ORFS_ROOT" rev-parse HEAD)"
+          docker image inspect "$ORFS_IMAGE" --format '{{.Id}} {{json .RepoDigests}}'
+
+      - name: Differential RTL verification against independent FIFO model
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iverilog
+          iverilog -g2012 -s fifo_readpath_equiv_tb \
+            -P fifo_readpath_equiv_tb.DATA_WIDTH=${{ matrix.width }} \
+            -P fifo_readpath_equiv_tb.DEPTH=${{ matrix.depth }} \
+            -o /tmp/readpath-paired.vvp \
+            rtl/fifo_sync.v \
+            research/readpath/rtl/fifo_sync_onehot.v \
+            research/readpath/tb/fifo_readpath_equiv_tb.v
+          vvp /tmp/readpath-paired.vvp
+
+      - name: Execute baseline and decoder through sequential RTL-to-GDSII and SPEF STA
+        run: |
+          bash research/readpath/scripts/run_openroad_comparison.sh \
+            ${{ matrix.width }} ${{ matrix.depth }} ${{ matrix.geometry }}
+
+      - name: Archive complete per-stage evidence and results, even if a stage fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: expansion-${{ matrix.width }}x${{ matrix.depth }}-${{ matrix.geometry }}-${{ github.run_id }}
+          path: research-pilot-reports/openroad_${{ matrix.width }}x${{ matrix.depth }}_${{ matrix.geometry }}/
+          if-no-files-found: warn
+          retention-days: 90
+
+  consolidate:
+    name: Consolidate baseline vs decoder across all configurations
+    needs: paired
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retrieve all config-specific archives
+        uses: actions/download-artifact@v4
+        with:
+          pattern: expansion-*-${{ github.run_id }}
+          path: collected
+          merge-multiple: false
+      - name: Build audit-friendly size-scaling comparison
+        run: |
+          python3 research/readpath/scripts/aggregate_expansion.py collected expansion-summary
+      - name: Preserve consolidated CSV, Markdown, and failure inventory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: expansion-summary-${{ github.run_id }}
+          path: expansion-summary/
+          retention-days: 90
+          if-no-files-found: warn
