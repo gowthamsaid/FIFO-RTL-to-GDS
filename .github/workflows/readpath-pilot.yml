@@ -1,0 +1,77 @@
+name: Research pilot — FIFO read-path architecture
+
+on:
+  push:
+    paths:
+      - "research/readpath/**"
+      - ".github/workflows/readpath-pilot.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rtl-equivalence:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {width: 8, depth: 16}
+          - {width: 32, depth: 32}
+          - {width: 8, depth: 64}
+          - {width: 16, depth: 32}
+          - {width: 32, depth: 16}
+          - {width: 64, depth: 8}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Icarus Verilog
+        run: sudo apt-get update && sudo apt-get install -y iverilog
+      - name: Verify both architectures against FIFO reference model
+        run: |
+          iverilog -g2012 -s fifo_readpath_equiv_tb \
+            -P fifo_readpath_equiv_tb.DATA_WIDTH=${{ matrix.width }} \
+            -P fifo_readpath_equiv_tb.DEPTH=${{ matrix.depth }} \
+            -o /tmp/readpath.vvp \
+            rtl/fifo_sync.v \
+            research/readpath/rtl/fifo_sync_onehot.v \
+            research/readpath/tb/fifo_readpath_equiv_tb.v
+          vvp /tmp/readpath.vvp
+
+  generic-synthesis:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {width: 8, depth: 16}
+          - {width: 32, depth: 32}
+          - {width: 8, depth: 64}
+          - {width: 16, depth: 32}
+          - {width: 32, depth: 16}
+          - {width: 64, depth: 8}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Yosys
+        run: sudo apt-get update && sudo apt-get install -y yosys
+      - name: Synthesize original and alternative architectures with identical Yosys flow
+        run: |
+          mkdir -p research-pilot-reports
+          for mode in baseline decoder; do
+            if [ "$mode" = baseline ]; then
+              source=rtl/fifo_sync.v
+              top=fifo_sync
+            else
+              source=research/readpath/rtl/fifo_sync_onehot.v
+              top=fifo_sync_onehot
+            fi
+            yosys -Q -T -l "research-pilot-reports/${mode}_${{ matrix.width }}x${{ matrix.depth }}.log" -p \
+              "read_verilog $source; chparam -set DATA_WIDTH ${{ matrix.width }} -set DEPTH ${{ matrix.depth }} $top; hierarchy -check -top $top; synth -top $top; check -assert; stat" \
+              > /dev/null
+            echo "### $mode ${{ matrix.width }}x${{ matrix.depth }}"
+            tail -70 "research-pilot-reports/${mode}_${{ matrix.width }}x${{ matrix.depth }}.log"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: yosys-generic-${{ matrix.width }}x${{ matrix.depth }}
+          path: research-pilot-reports/
