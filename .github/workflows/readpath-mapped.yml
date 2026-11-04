@@ -1,0 +1,35 @@
+name: Research pilot — Nangate45 mapped synthesis
+
+on:
+  push:
+    paths:
+      - "research/readpath/scripts/run_mapped_synthesis.sh"
+      - ".github/workflows/readpath-mapped.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mapped-synthesis:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {width: 8, depth: 16}
+          - {width: 32, depth: 32}
+          - {width: 8, depth: 64}
+          - {width: 32, depth: 16}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Yosys
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yosys
+      - name: Synthesize baseline and shared decoder with pinned Nangate45 Liberty
+        run: bash research/readpath/scripts/run_mapped_synthesis.sh ${{ matrix.width }} ${{ matrix.depth }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mapped-nangate45-${{ matrix.width }}x${{ matrix.depth }}
+          path: research-pilot-reports/mapped_${{ matrix.width }}x${{ matrix.depth }}/
