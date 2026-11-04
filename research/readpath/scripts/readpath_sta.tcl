@@ -1,31 +1,31 @@
-# Targeted post-route STA. Run via ORFS 'make ... RUN_SCRIPT=... run'.
-# Keep the actual post-route SPEF where available (no ideal wire-delay claims).
-source $::env(SCRIPTS_DIR)/load.tcl
-load_design 6_final.odb 6_final.sdc
+# Standalone targeted STA on the final routed database, using extracted SPEF.
+# Called inside the pinned ORFS image after source ../env.sh.
+set root $::env(READPATH_DESIGN_DIR)
+set reports $::env(READPATH_REPORT_DIR)
+set platform "/OpenROAD-flow-scripts/flow/platforms/nangate45"
+read_liberty "$platform/lib/NangateOpenCellLibrary_typical.lib"
+read_db "$root/6_final.odb"
+read_sdc "$root/6_final.sdc"
+source "$platform/setRC.tcl"
+if {![file exists "$root/6_final.spef"]} {
+  error "Final SPEF missing. Refusing estimated/pre-route timing."
+}
+read_spef "$root/6_final.spef"
 set_propagated_clock [all_clocks]
-
-set spef "$::env(RESULTS_DIR)/6_final.spef"
-if {[file exists $spef]} {
-  puts "READPATH_STA_PARASITICS: extracted SPEF"
-  read_spef $spef
-} elseif {[grt::have_routes]} {
-  puts "READPATH_STA_PARASITICS: estimated from global route (not extracted SPEF)"
-  estimate_parasitics -global_routing
-} else {
-  error "Cannot obtain routed parasitics; refusing a pre-route timing claim"
-}
-
-set from_regs [get_cells -hierarchical *read_ptr*]
-set to_regs [get_cells -hierarchical *data_out*]
+set from_regs [get_cells -quiet {*read_ptr*}]
+set to_regs [get_cells -quiet {*data_out*}]
+puts "READPATH: [llength $from_regs] launch registers, [llength $to_regs] endpoints"
 if {[llength $from_regs] == 0 || [llength $to_regs] == 0} {
-  error "Cannot locate read_ptr and data_out registers after synthesis. Inspect naming; do not report missing path as zero delay."
+  error "Read-pointer and/or data-output registers missing."
 }
-set target "$::env(REPORTS_DIR)/readpath-targeted.rpt"
-set global "$::env(REPORTS_DIR)/readpath-global.rpt"
-puts "READPATH_STA: reporting read_ptr to data_out register-to-register setup paths"
-report_checks -path_delay max -from $from_regs -to $to_regs \
-  -group_path_count 5 -fields {slew cap input net fanout} \
-  -format full_clock_expanded > $target
-report_checks -path_delay max -fields {slew cap input net fanout} \
-  -format full_clock_expanded > $global
-puts "READPATH_STA: target $target; global $global"
+set target "$reports/readpath-targeted.rpt"
+set fd [open $target w]
+close $fd
+report_checks -from $from_regs -to $to_regs -path_delay max \
+  -group_path_count 16 -endpoint_path_count 1 \
+  -format full_clock_expanded -fields {slew capacitance fanout} \
+  -digits 4 > $target
+if {[file size $target] == 0} {
+  error "Empty targeted read-path report."
+}
+puts "READPATH: wrote $target"

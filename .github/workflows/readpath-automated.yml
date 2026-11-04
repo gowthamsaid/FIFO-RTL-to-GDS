@@ -1,0 +1,106 @@
+name: Read-path research — validated automated physical design
+
+on:
+  push:
+    branches: [research/readpath-pilot-nov2026]
+    paths:
+      - "research/readpath/scripts/run_openroad_comparison.sh"
+      - "research/readpath/scripts/readpath_sta.tcl"
+      - "research/readpath/scripts/summarize_openroad.py"
+      - "research/readpath/scripts/validate_manual_pilot.py"
+      - ".github/workflows/readpath-automated.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: readpath-validated-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  ORFS_REV: d056a2b304182bf76ff10653531165b1dd9848d4
+  ORFS_IMAGE: openroad/orfs@sha256:641c6870a2c64143464d46017dd25ab647900fd29dce502230a2db0682e69bc9
+  ORFS_ROOT: /tmp/openroad-research-orfs
+
+jobs:
+  validate-manual-8x16:
+    name: Validate cloud 8x16 against manual WSL
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reuse pinned OpenROAD flow toolchain
+        run: |
+          git clone --filter=blob:none https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git "$ORFS_ROOT"
+          git -C "$ORFS_ROOT" checkout "$ORFS_REV"
+          git -C "$ORFS_ROOT" submodule update --init --recursive --depth 1
+          docker pull "$ORFS_IMAGE"
+          echo "ORFS_REV=$(git -C "$ORFS_ROOT" rev-parse HEAD)"
+          docker image inspect "$ORFS_IMAGE" --format '{{.Id}} {{json .RepoDigests}}'
+      - name: Verify RTL against reference model
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iverilog
+          iverilog -g2012 -s fifo_readpath_equiv_tb \
+            -P fifo_readpath_equiv_tb.DATA_WIDTH=8 \
+            -P fifo_readpath_equiv_tb.DEPTH=16 \
+            -o /tmp/readpath-pilot.vvp \
+            rtl/fifo_sync.v \
+            research/readpath/rtl/fifo_sync_onehot.v \
+            research/readpath/tb/fifo_readpath_equiv_tb.v
+          vvp /tmp/readpath-pilot.vvp
+      - name: Full sequential baseline and decoder RTL-to-GDSII + extracted read-path STA
+        run: bash research/readpath/scripts/run_openroad_comparison.sh 8 16 natural
+      - name: Gate on reproducibility against recorded manual findings
+        run: |
+          python3 research/readpath/scripts/validate_manual_pilot.py \
+            research-pilot-reports/openroad_8x16_natural
+          echo "Pilot reproduces manual measurements within stated tolerances."
+      - name: Preserve complete pilot stage evidence on pass or failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validated-pilot-8x16-${{ github.run_id }}
+          path: research-pilot-reports/openroad_8x16_natural/
+          if-no-files-found: warn
+          retention-days: 90
+
+  larger-experiments:
+    name: Paired P&R ${{ matrix.width }}x${{ matrix.depth }} / ${{ matrix.geometry }}
+    needs: validate-manual-8x16
+    if: ${{ needs.validate-manual-8x16.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - {width: 32, depth: 32, geometry: natural}
+          - {width: 8, depth: 16, geometry: matched}
+          - {width: 32, depth: 32, geometry: matched}
+          - {width: 8, depth: 64, geometry: natural}
+          - {width: 16, depth: 32, geometry: natural}
+          - {width: 32, depth: 16, geometry: natural}
+          - {width: 64, depth: 8, geometry: natural}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reuse pinned OpenROAD flow toolchain
+        run: |
+          git clone --filter=blob:none https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git "$ORFS_ROOT"
+          git -C "$ORFS_ROOT" checkout "$ORFS_REV"
+          git -C "$ORFS_ROOT" submodule update --init --recursive --depth 1
+          docker pull "$ORFS_IMAGE"
+      - name: Full paired implementation and extracted post-route read-path STA
+        run: |
+          bash research/readpath/scripts/run_openroad_comparison.sh \
+            ${{ matrix.width }} ${{ matrix.depth }} ${{ matrix.geometry }}
+      - name: Archive complete per-stage artifacts (including partial failures)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: readpath-${{ matrix.width }}x${{ matrix.depth }}-${{ matrix.geometry }}-${{ github.run_id }}
+          path: research-pilot-reports/openroad_${{ matrix.width }}x${{ matrix.depth }}_${{ matrix.geometry }}/
+          if-no-files-found: warn
+          retention-days: 90
