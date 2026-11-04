@@ -162,3 +162,23 @@ required time, and setup slack. Reconfirm both designs still meet hold.
 - [ ] 32×32 paired implementations
 - [ ] Controlled repeat runs / sensitivity analysis if effect is promising
 - [ ] Written interpretation with a clear rejection/acceptance criterion
+
+## Make a machine-readable stage ledger
+
+After each run, collect every available tool-reported metric into a CSV:
+
+```bash
+python3 research/readpath/scripts/collect_stage_metrics.py
+```
+
+The result is `research/readpath/runs/stage_metrics_long.csv`. Every value
+is tagged with its **size, architecture, stage, source report filename,
+and exact raw metric name**. This prevents accidental comparisons between
+incomparable stages and avoids manufacturing absent data. Keep this local
+ledger with the raw reports. Use a separate reviewed table for selected
+read-path measurements and corresponding timing path printouts.
+
+To compare results, explicitly report baseline minus decoder delay and
+`(decoder - baseline) / baseline × 100%` for cost metrics. The overall worst
+setup path can shift after optimization; document the startpoint/endpoint
+on both architectures.
