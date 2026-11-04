@@ -1,0 +1,50 @@
+name: Research pilot — post-route read-path STA
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "research/readpath/scripts/run_openroad_comparison.sh"
+      - "research/readpath/scripts/readpath_sta.tcl"
+      - "research/readpath/scripts/summarize_openroad.py"
+      - ".github/workflows/readpath-openroad.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  routed-comparison:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - {width: 8, depth: 16}
+          - {width: 32, depth: 32}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout pinned OpenROAD-flow-scripts revision
+        run: |
+          git clone --filter=blob:none https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git /tmp/orfs
+          git -C /tmp/orfs checkout d056a2b304182bf76ff10653531165b1dd9848d4
+          git -C /tmp/orfs submodule update --init --recursive --depth 1
+          git -C /tmp/orfs rev-parse HEAD
+      - name: Pull and identify OpenROAD flow toolchain
+        run: |
+          docker pull openroad/orfs:latest
+          docker image inspect openroad/orfs:latest --format '{{.Id}} {{json .RepoDigests}}'
+      - name: Run matched baseline versus decoder through full route and STA
+        env:
+          ORFS_ROOT: /tmp/orfs
+        run: |
+          bash research/readpath/scripts/run_openroad_comparison.sh ${{ matrix.width }} ${{ matrix.depth }}
+      - name: Archive research timing evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openroad-readpath-${{ matrix.width }}x${{ matrix.depth }}
+          if-no-files-found: warn
+          retention-days: 30
+          path: research-pilot-reports/openroad_${{ matrix.width }}x${{ matrix.depth }}/
