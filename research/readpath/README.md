@@ -98,3 +98,29 @@ and estimated library cell area before any floorplan, clock tree, wire
 parasitics, or timing constraints. We will proceed to a controlled OpenROAD
 run only after the mapped outputs are inspected and the research hypothesis
 remains worth testing.
+
+## Initial mapped-synthesis result — 2026-11-04
+
+[GitHub Actions mapped-synthesis run](https://github.com/gowthamsaid/FIFO-RTL-to-GDS/actions/runs/41872480609)
+completed successfully on all four configurations. Using the same
+pinned Nangate45 typical-corner Liberty and Yosys mapping commands:
+
+| FIFO | Baseline mapped cells | Decoder mapped cells | Baseline library area (µm²) | Decoder library area (µm²) | Area change |
+|---|---:|---:|---:|---:|---:|
+| 8×16 | 495 | 503 | 1197.000 | 1164.282 | −2.7% |
+| 32×16 | 1961 | 1537 | 4479.440 | 4100.124 | −8.5% |
+| 8×64 | 2030 | 1717 | 4514.020 | 4144.546 | −8.2% |
+| 32×32 | 3797 | 2980 | 8702.190 | 7907.648 | −9.1% |
+
+These `stat -liberty` estimates are **mapped-cell areas only**, not
+placed/routed design area, and no path-delay comparison has yet been run.
+They are not directly comparable with previously archived post-route
+OpenROAD results, which reflect the separate original implementation
+flow. Both variants must undergo consistent backend implementation
+and STA before timing conclusions or an area/timing tradeoff can be made.
+
+**Interpretation:** Even though decoder generic synthesis contained
+more primitive logic cells, technology mapping reduced library cell area
+at all four tested sizes. This supports progressing to a controlled
+physical-design pilot; it does **not** establish H1, H2, or post-route
+timing benefit. Keep power, delay, and congestion claims provisional.
