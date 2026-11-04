@@ -8,3 +8,6 @@ reports/*.log
 # Temporary files
 *.swp
 *~
+
+# Locally generated ORFS research runs: raw logs, per-stage reports, metrics
+research/readpath/runs/
