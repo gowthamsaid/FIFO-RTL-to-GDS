@@ -68,8 +68,9 @@ EOF
   result_dir="$flow/results/nangate45/$nickname/base"
   report_dir="$flow/reports/nangate45/$nickname/base"
   test -s "$result_dir/6_final.odb"
-  test -s "$report_dir/6_report.json"
-  cp "$report_dir/6_report.json" "$out/${mode}_6_report.json"
+  log_dir="$flow/logs/nangate45/$nickname/base"
+  test -s "$log_dir/6_report.json"
+  cp "$log_dir/6_report.json" "$out/${mode}_6_report.json"
   find "$report_dir" -maxdepth 1 -type f -name '6_*.rpt' \
     -exec cp {} "$out/" \;
   # Give generic reports mode-qualified names to avoid overwrites.
