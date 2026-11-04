@@ -95,10 +95,15 @@ export PLATFORM = nangate45
 export VERILOG_FILES = \$(DESIGN_HOME)/src/research_readpath/$arch.v
 export VERILOG_TOP_PARAMS = DATA_WIDTH $width DEPTH $depth
 export SDC_FILE = \$(DESIGN_HOME)/nangate45/$nickname/constraint.sdc
-export CORE_UTILIZATION = 40
 export PLACE_DENSITY = 0.60
 export SYNTH_REPEATABLE_BUILD = 1
 EOF
+  # OpenROAD floorplan.tcl requires exactly ONE initialization method.
+  # Natural: synthesis-area-based CORE_UTILIZATION.
+  # Matched: explicit identical DIE_AREA and CORE_AREA appended after synth.
+  if [[ "$geometry" == natural ]]; then
+    printf 'export CORE_UTILIZATION = 40\n' >> "$cfg_dir/config.mk"
+  fi
   for dir in results logs reports objects; do
     mkdir -p "$flow/$dir/nangate45/$nickname/$variant"
   done
@@ -130,6 +135,14 @@ print(f"{side:.3f} {side-1.14:.3f} {side-1.40:.3f}")
 PY
 )
   echo "DIE_AREA=0 0 $die $die; CORE_AREA=1.140 1.400 $core_x $core_y" | tee "$out/matched-geometry.txt"
+  # Guard against accidentally reintroducing the mutually exclusive mode.
+  for arch in baseline decoder; do
+    cfg="$flow/designs/nangate45/readpath_${width}x${depth}_${arch}/config.mk"
+    if grep -Eq '^export CORE_UTILIZATION[[:space:]]*=' "$cfg"; then
+      echo "Matched-core config must not set CORE_UTILIZATION: $cfg" >&2
+      exit 1
+    fi
+  done
   for arch in baseline decoder; do
     cfg="$flow/designs/nangate45/readpath_${width}x${depth}_${arch}/config.mk"
     printf 'export DIE_AREA = 0 0 %s %s\nexport CORE_AREA = 1.140 1.400 %s %s\n' \

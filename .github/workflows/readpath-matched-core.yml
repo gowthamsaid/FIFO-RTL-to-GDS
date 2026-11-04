@@ -1,0 +1,131 @@
+name: Research fix — matched-core FIFO read-path comparison
+
+on:
+  push:
+    branches: [research/readpath-pilot-nov2026]
+    paths:
+      - ".github/workflows/readpath-matched-core.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: readpath-matched-core-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  ORFS_REV: d056a2b304182bf76ff10653531165b1dd9848d4
+  ORFS_IMAGE: openroad/orfs@sha256:641c6870a2c64143464d46017dd25ab647900fd29dce502230a2db0682e69bc9
+  ORFS_ROOT: /tmp/openroad-research-orfs
+
+jobs:
+  paired-matched-core:
+    name: Matched floorplan ${{ matrix.width }}x${{ matrix.depth }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - {width: 8, depth: 16}
+          - {width: 32, depth: 32}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned ORFS and OpenROAD toolchain
+        run: |
+          git clone --filter=blob:none https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git "$ORFS_ROOT"
+          git -C "$ORFS_ROOT" checkout "$ORFS_REV"
+          git -C "$ORFS_ROOT" submodule update --init --recursive --depth 1
+          docker pull "$ORFS_IMAGE"
+          printf "Pinned ORFS: %s\n" "$(git -C "$ORFS_ROOT" rev-parse HEAD)"
+          docker image inspect "$ORFS_IMAGE" --format '{{.Id}} {{json .RepoDigests}}'
+      - name: Check functional behavior against independent queue model
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iverilog
+          iverilog -g2012 -s fifo_readpath_equiv_tb \
+            -P fifo_readpath_equiv_tb.DATA_WIDTH=${{ matrix.width }} \
+            -P fifo_readpath_equiv_tb.DEPTH=${{ matrix.depth }} \
+            -o /tmp/paired.vvp \
+            rtl/fifo_sync.v research/readpath/rtl/fifo_sync_onehot.v \
+            research/readpath/tb/fifo_readpath_equiv_tb.v
+          vvp /tmp/paired.vvp
+      - name: Full matched-core RTL-to-GDSII and extracted post-route STA
+        run: |
+          bash research/readpath/scripts/run_openroad_comparison.sh \
+            ${{ matrix.width }} ${{ matrix.depth }} matched
+      - name: Archive per-stage reports and final physical checkpoints
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: matched-core-${{ matrix.width }}x${{ matrix.depth }}-${{ github.run_id }}
+          path: research-pilot-reports/openroad_${{ matrix.width }}x${{ matrix.depth }}_matched/
+          if-no-files-found: warn
+          retention-days: 90
+
+  summarize:
+    name: Matched-core comparison summary
+    needs: paired-matched-core
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download paired reports (including incomplete runs)
+        uses: actions/download-artifact@v4
+        with:
+          pattern: matched-core-*-${{ github.run_id }}
+          path: collected
+      - name: Write two-configuration summary and status
+        run: |
+          mkdir -p matched-summary
+          python3 - <<'PY'
+          import csv, json, pathlib
+          root = pathlib.Path("collected")
+          out = pathlib.Path("matched-summary")
+          fields=["fifo","status","baseline_delay_ns","decoder_delay_ns",
+                  "delay_reduction_pct","baseline_cell_area_um2",
+                  "decoder_cell_area_um2","area_change_pct",
+                  "baseline_wire_um","decoder_wire_um","wire_change_pct"]
+          rows=[]
+          md=["# Matched-core FIFO read-path comparison", "",
+              "Both architectures must share identical explicit die/core bounds;",
+              "this comparison does not replace the earlier natural-floorplan results.",
+              "",
+              "|FIFO|Status|Baseline delay (ns)|Decoder delay (ns)|Delay reduction|Final cell-area change|Routing-wire change|",
+              "|---|---|---:|---:|---:|---:|---:|"]
+          for size in ("8x16","32x32"):
+              files=list(root.glob("matched-core-"+size+"-*/comparison.json"))
+              if len(files)!=1:
+                  rows.append({"fifo":size,"status":"incomplete"})
+                  md.append(f"|{size}|Incomplete; see corresponding archived stage logs|—|—|—|—|—|")
+                  continue
+              j=json.loads(files[0].read_text())
+              b,d=j["baseline"],j["decoder"]
+              bd,dd=b["read_path"]["clock_to_data_ns"],d["read_path"]["clock_to_data_ns"]
+              ba,da=b["final_cell_area_rounded_um2"],d["final_cell_area_rounded_um2"]
+              bw,dw=b["routing_wire_length_um"],d["routing_wire_length_um"]
+              row={"fifo":size,"status":"complete",
+                   "baseline_delay_ns":bd,"decoder_delay_ns":dd,
+                   "delay_reduction_pct":round(100*(bd-dd)/bd,3),
+                   "baseline_cell_area_um2":ba,"decoder_cell_area_um2":da,
+                   "area_change_pct":round(100*(da-ba)/ba,3),
+                   "baseline_wire_um":bw,"decoder_wire_um":dw,
+                   "wire_change_pct":round(100*(dw-bw)/bw,3)}
+              rows.append(row)
+              md.append(f"|{size}|Complete|{bd:.4f}|{dd:.4f}|{row['delay_reduction_pct']:+.2f}%|{row['area_change_pct']:+.2f}%|{row['wire_change_pct']:+.2f}%|")
+          with (out/"matched-core-comparison.csv").open("w",newline="") as f:
+              writer=csv.DictWriter(f,fields)
+              writer.writeheader()
+              writer.writerows(rows)
+          (out/"matched-core-comparison.md").write_text("\n".join(md)+"\n")
+          print("\n".join(md))
+          PY
+      - name: Preserve comparison table
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: matched-core-summary-${{ github.run_id }}
+          path: matched-summary/
+          retention-days: 90

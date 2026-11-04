@@ -4,7 +4,6 @@ on:
   push:
     branches: [research/readpath-pilot-nov2026]
     paths:
-      - "research/readpath/scripts/run_openroad_comparison.sh"
       - "research/readpath/scripts/readpath_sta.tcl"
       - "research/readpath/scripts/summarize_openroad.py"
       - "research/readpath/scripts/validate_manual_pilot.py"
