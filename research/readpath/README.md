@@ -124,3 +124,14 @@ more primitive logic cells, technology mapping reduced library cell area
 at all four tested sizes. This supports progressing to a controlled
 physical-design pilot; it does **not** establish H1, H2, or post-route
 timing benefit. Keep power, delay, and congestion claims provisional.
+
+
+## Stage 3: matched routed read-path timing (in progress)
+
+[GitHub Actions post-route comparison](https://github.com/gowthamsaid/FIFO-RTL-to-GDS/actions/workflows/readpath-openroad.yml) tests 8x16 and 32x32 in separate jobs. The workflow uses the pinned ORFS source revision stated above and records the fetched `openroad/orfs:latest` Docker image ID/digest at runtime; the image tag itself is mutable and must not be treated as a fully pinned tool version. Any future cross-run comparisons must hold the recorded digest fixed.
+
+The two variants use the same Nangate45 platform, 2 ns clock, 0.2 ns input/output delays, 40% target utilization, 0.60 place density, tool image, implementation scripts, and depth/width. They go through placement, CTS, routing, extracted-parasitic STA when SPEF is available, and final metrics. The intended distinguishing variable is the read-selection RTL.
+
+Artifacts contain both final metrics and path reports, including the constrained `read_ptr` register to `data_out` register setup path. `data arrival time` includes launch-clock insertion, so it is not by itself a pure clock-to-Q-plus-combinational delay. Target-path **setup slack** and path cell/net detail should be used alongside identical clock settings, and critical-path migration must be documented. A reduction in mapped cell area does not guarantee an improvement in read-path timing.
+
+**Status:** workflow created and first run queued on November 4, 2026. Post-route timing measurements have not yet been validated; implementation failures are diagnostic, not null scientific results. Before presenting this as publishable evidence, inspect the generated reports, verify parasitic extraction, repeat for multiple settings/seeds, and check prior art.
