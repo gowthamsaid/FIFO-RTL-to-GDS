@@ -80,3 +80,21 @@ commands in `.github/workflows/readpath-pilot.yml`.
 Artifacts from the workflow are generic synthesis logs; there is **no claim
 that physical design, routed timing, formal equivalence, or publication-level
 novelty has been established by these jobs**.
+
+## Stage 2: Nangate45 mapped-synthesis pilot
+
+A separate GitHub Actions workflow, `Research pilot — Nangate45 mapped synthesis`,
+runs `research/readpath/scripts/run_mapped_synthesis.sh` on 8x16, 32x32,
+8x64, and 32x16. It downloads a Nangate45 **typical-corner** Liberty file
+from pinned upstream ORFS commit
+`d056a2b304182bf76ff10653531165b1dd9848d4`.
+The workflow records the library SHA-256 hash and Yosys version, then performs
+identical synthesis, standard-cell flip-flop mapping and ABC logic mapping
+for both architectures. Netlists, complete logs, and `stat -liberty`
+area statistics are retained as CI artifacts.
+
+**This cannot establish timing benefit.** It evaluates mapped gate types
+and estimated library cell area before any floorplan, clock tree, wire
+parasitics, or timing constraints. We will proceed to a controlled OpenROAD
+run only after the mapped outputs are inspected and the research hypothesis
+remains worth testing.
